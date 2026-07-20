@@ -1,0 +1,7 @@
+id=v2fly-tproxy
+name=V2fly tproxy module for Magisk
+version=5.52.0
+versionCode=11
+author=xiliuya
+description=Magisk module to run V2fly tproxy.
+updateJson=https://raw.githubusercontent.com/xiliuya/v2ray_tproxy/main/update.json

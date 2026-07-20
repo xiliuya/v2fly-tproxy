@@ -1,0 +1,96 @@
+#!/system/bin/sh
+
+DAEMON="/data/adb/modules/v2fly-tproxy/v2ray/bin/v2ray"
+CONF_DIR="/data/adb/v2fly/"
+PID_FILE="${CONF_DIR}/v2ray.pid"
+LOG_FILE="${CONF_DIR}/v2ray.log"
+
+is_running() {
+	[ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null
+}
+
+start() {
+	if is_running; then
+		echo "v2ray is already running (PID: $(cat "$PID_FILE"))"
+		return 1
+	fi
+
+	echo "Starting v2ray..."
+
+	# 确保日志目录存在
+	mkdir -p "$(dirname "$LOG_FILE")"
+
+	# 使用 nohup 后台运行并将输出重定向，记录 PID
+	nohup "$DAEMON" run -config "$CONF_DIR/config.json" >"$LOG_FILE" 2>&1 &
+
+	echo $! >"$PID_FILE"
+
+	if is_running; then
+		echo "v2ray started successfully (PID: $(cat "$PID_FILE"))"
+	else
+		echo "Error: v2ray failed to start. Check $LOG_FILE for details."
+		rm -f "$PID_FILE"
+		return 1
+	fi
+}
+
+stop() {
+	if ! is_running; then
+		echo "v2ray is not running."
+		rm -f "$PID_FILE"
+		return 0
+	fi
+
+	PID="$(cat "$PID_FILE")"
+	echo "Stopping v2ray (PID: $PID)..."
+	kill "$PID"
+
+	# 等待进程退出
+	CNT=0
+	while is_running; do
+		sleep 0.5
+		CNT=$((CNT + 1))
+		if [ "$CNT" -gt 10 ]; then
+			echo "Process did not terminate gracefully, forcing kill..."
+			kill -9 "$PID" 2>/dev/null
+			break
+		fi
+	done
+
+	rm -f "$PID_FILE"
+	echo "v2ray stopped."
+}
+
+restart() {
+	stop
+	sleep 1
+	start
+}
+
+status() {
+	if is_running; then
+		echo "v2ray is running (PID: $(cat "$PID_FILE"))"
+	else
+		echo "v2ray is stopped."
+		return 1
+	fi
+}
+
+case "$1" in
+start)
+	start
+	;;
+stop)
+	stop
+	;;
+restart)
+	restart
+	;;
+status)
+	status
+	;;
+*)
+	echo "Usage: $0 {start|stop|restart|status}"
+	exit 1
+	;;
+esac

@@ -1,0 +1,221 @@
+#!/system/bin/sh
+
+# iptables_cmd="iptables -w 2"
+dokodemo_port="12345"
+mark=255
+v2fly_mark=$(printf '0x%x' "$mark")
+table_id=12321
+# Android 的"一应用一用户"机制,appid 是该应用的 UID
+appid_file=${APPID_FILE:-"/data/adb/v2fly/appid.list"}
+update_appid() {
+	setup_appid "iptables"
+	setup_appid "ip6tables"
+}
+setup_appid() {
+	local iptables_cmd="$1 -w 2"
+	appid_list=()
+	if [ ! -f "$appid_file" ]; then
+		echo "Error: $appid_file not found" >&2
+		return
+	fi
+	while read -r line; do
+		line=$(echo "$line" | tr -d '\r' | tr -d ' ')
+		if [ -z "$line" ]; then
+			continue
+		fi
+		case "$line" in
+		*[!0-9]*)
+			echo "警告: 跳过非数字内容 -> $line" >&2
+			;;
+		*)
+			appid_list+=("$line")
+			;;
+		esac
+	done <"$appid_file"
+	echo "当前读到的APPID_LIST: ${appid_list[@]}"
+	${iptables_cmd} -t mangle -F APP_CHAIN
+	for appid in "${appid_list[@]}"; do
+		echo "正在加入 APPID: $appid"
+		# 进程归属 $appid 的数据包需要继续过滤
+		${iptables_cmd} -t mangle -A APP_CHAIN -m owner \
+			--uid-owner "$appid" -j RETURN
+	done
+	${iptables_cmd} -t mangle -A APP_CHAIN -j ACCEPT
+
+}
+
+apply_rules() {
+	setup_iptables "iptables" "ip" "0.0.0.0/0" "127.0.0.1"
+	#setup_iptables "ip6tables" "ip -6" "::/0" "::1"
+
+}
+setup_iptables() {
+	local iptables_cmd="$1 -w 2"
+	local ip_cmd="$2"
+	local all_net="$3"
+	local lo_net="$4"
+
+	${ip_cmd} rule add fwmark "$mark" table "$table_id" pref "$table_id"
+	${ip_cmd} route add local "$all_net" dev lo table "$table_id"
+
+	[ "$(cat /proc/sys/net/ipv4/ip_forward)" -eq 0 ] &&
+		echo 1 >/proc/sys/net/ipv4/ip_forward
+
+	${iptables_cmd} -t mangle -N APP_CHAIN
+	setup_appid "$1"
+
+	${iptables_cmd} -t mangle -N DEVICE_PASS
+	${iptables_cmd} -t mangle -A DEVICE_PASS -o wlan2 -j ACCEPT
+	${iptables_cmd} -t mangle -A DEVICE_PASS -o rndis+ -j ACCEPT
+
+	${iptables_cmd} -t mangle -N LOCAL_PASS
+	if [ "$ip_cmd" = "ip -6" ]; then
+		local_nets=(
+			"::1/128" "fe80::/10" "fc00::/7" "2001:db8::/32" "ff00::/8"
+		)
+	else
+		local_nets=(
+			"0.0.0.0/8"
+			"10.0.0.0/8"
+			"100.64.0.0/10" # CGNAT 网段
+			"127.0.0.0/8"
+			"169.254.0.0/16"
+			"172.16.0.0/12"
+			"192.0.0.0/24"
+			"192.0.2.0/24"
+			"192.88.99.0/24"
+			"192.168.0.0/16"
+			"198.18.0.0/15" # 基准测试网段
+			"198.51.100.0/24"
+			"203.0.113.0/24"
+			"224.0.0.0/4"
+			"240.0.0.0/4"
+			"255.255.255.255/32"
+		)
+	fi
+	for net in "${local_nets[@]}"; do
+		${iptables_cmd} -t mangle -A LOCAL_PASS -d "$net" -j ACCEPT
+	done
+
+	${iptables_cmd} -t mangle -N V2FLY_DEVICE
+	${iptables_cmd} -t mangle -A V2FLY_DEVICE -i lo -j RETURN
+	${iptables_cmd} -t mangle -A V2FLY_DEVICE -i rmnet_data+ -j RETURN
+	${iptables_cmd} -t mangle -A V2FLY_DEVICE -i wlan0 -j RETURN
+	${iptables_cmd} -t mangle -A V2FLY_DEVICE -i wlan2 -j ACCEPT
+	${iptables_cmd} -t mangle -A V2FLY_DEVICE -i rndis+ -j ACCEPT
+
+	${iptables_cmd} -t mangle -N V2FLY_OUTPUT
+	${iptables_cmd} -t mangle -A OUTPUT -p tcp -j V2FLY_OUTPUT
+	${iptables_cmd} -t mangle -A OUTPUT -p udp -j V2FLY_OUTPUT
+	${iptables_cmd} -t mangle -A V2FLY_OUTPUT -i lo -j RETURN
+	# 不代理DNS
+	${iptables_cmd} -t mangle -A V2FLY_OUTPUT -p udp --dport 53 -j RETURN
+	# 防止回环,mark 后的数据包直通
+	${iptables_cmd} -t mangle -A V2FLY_OUTPUT -m mark --mark ${v2fly_mark} -j ACCEPT
+
+	${iptables_cmd} -t mangle -A V2FLY_OUTPUT -m conntrack --ctdir REPLY -j ACCEPT
+	${iptables_cmd} -t mangle -A V2FLY_OUTPUT -j LOCAL_PASS
+	${iptables_cmd} -t mangle -A V2FLY_OUTPUT -j DEVICE_PASS
+	${iptables_cmd} -t mangle -A V2FLY_OUTPUT -j APP_CHAIN
+	${iptables_cmd} -t mangle -A V2FLY_OUTPUT -j MARK --set-xmark ${v2fly_mark}
+
+	${iptables_cmd} -t mangle -N V2FLY_PREROUTING
+	${iptables_cmd} -t mangle -A PREROUTING -p tcp -j V2FLY_PREROUTING
+	${iptables_cmd} -t mangle -A PREROUTING -p udp -j V2FLY_PREROUTING
+	# 不代理DNS
+	${iptables_cmd} -t mangle -A V2FLY_PREROUTING -p udp --dport 53 -j RETURN
+	${iptables_cmd} -t mangle -A V2FLY_PREROUTING -m conntrack --ctdir REPLY -j ACCEPT
+	${iptables_cmd} -t mangle -A V2FLY_PREROUTING -j LOCAL_PASS
+	${iptables_cmd} -t mangle -A V2FLY_PREROUTING -j V2FLY_DEVICE
+	${iptables_cmd} -t mangle -A V2FLY_PREROUTING -p tcp -j TPROXY \
+		--on-port ${dokodemo_port} --on-ip "$lo_net" \
+		--tproxy-mark ${v2fly_mark}
+	${iptables_cmd} -t mangle -A V2FLY_PREROUTING -p udp -j TPROXY \
+		--on-port ${dokodemo_port} --on-ip "$lo_net" \
+		--tproxy-mark ${v2fly_mark}
+
+}
+
+clean_rules() {
+	setup_clean "iptables" "ip" "0.0.0.0/0"
+	#setup_clean "ip6tables" "ip -6" "::/0"
+}
+setup_clean() {
+	local iptables_cmd="$1 -w 2"
+	local ip_cmd="$2"
+	local all_net="$3"
+	${ip_cmd} rule del fwmark "$mark" table "$table_id" pref "$table_id"
+	${ip_cmd} route del local "$all_net" dev lo table "$table_id"
+
+	${iptables_cmd} -t mangle -D OUTPUT -p tcp -j V2FLY_OUTPUT
+	${iptables_cmd} -t mangle -D OUTPUT -p udp -j V2FLY_OUTPUT
+
+	${iptables_cmd} -t mangle -D PREROUTING -p tcp -j V2FLY_PREROUTING
+	${iptables_cmd} -t mangle -D PREROUTING -p udp -j V2FLY_PREROUTING
+
+	chains=(
+		"APP_CHAIN"
+		"DEVICE_PASS"
+		"LOCAL_PASS"
+		"V2FLY_DEVICE"
+		"V2FLY_OUTPUT"
+		"V2FLY_PREROUTING"
+	)
+
+	for chain in "${chains[@]}"; do
+		${iptables_cmd} -t mangle -F "$chain"
+	done
+	for chain in "${chains[@]}"; do
+		${iptables_cmd} -t mangle -X "$chain"
+	done
+}
+
+check_tproxy() {
+
+	echo "--- 开始 TPROXY 环境检测 ---"
+
+	if [ -f /proc/net/netfilter/xt_TPROXY ]; then
+		echo "[✔] 内核已加载 TPROXY 模块支持"
+	else
+		# 部分内核不显示该文件，尝试通过 iptables 探测
+		echo "[!] /proc/net/netfilter/xt_TPROXY 不存在，正在通过 iptables 探测..."
+	fi
+
+	if iptables -t mangle -A PREROUTING -p tcp -j TPROXY --help >/dev/null 2>&1; then
+		echo "[✔] iptables 支持 TPROXY 模块"
+	else
+		echo "[✘] 错误：当前环境的 iptables 不支持 TPROXY (可能缺少内核模块或二进制文件版本过低)"
+		exit 1
+	fi
+
+	if command -v ip >/dev/null 2>&1; then
+		if ip rule help 2>&1 | grep -q "from"; then
+			echo "[✔] ip 命令支持路由策略规则"
+		else
+			echo "[✘] 错误：ip 命令功能不完整"
+		fi
+	else
+		echo "[✘] 错误：未找到 ip 命令 (Android 系统可能缺少 iproute2 工具集)"
+		exit 1
+	fi
+
+	iptables -t mangle -N TPROXY_TEST_CHAIN 2>/dev/null
+	if [ $? -eq 0 ]; then
+		echo "[✔] 具备操作 mangle 表权限"
+		iptables -t mangle -X TPROXY_TEST_CHAIN
+	else
+		echo "[✘] 错误：无法创建 mangle 表链 (可能需要 root 权限)"
+		exit 1
+	fi
+
+	echo "--- 检测结果：你的环境满足 TPROXY 透明代理要求！ ---"
+
+}
+
+case "$1" in
+start) apply_rules ;;
+stop) clean_rules ;;
+update) update_appid ;;
+check) check_tproxy ;;
+*) echo "Usage: $0 {start|stop|update|check}" ;;
+esac
