@@ -2,13 +2,15 @@
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 if [ -f "$SCRIPT_DIR/common_function.sh" ]; then
-    . "$SCRIPT_DIR/common_function.sh"
+	. "$SCRIPT_DIR/common_function.sh"
 fi
 
 load_conf_var DAEMON "/data/adb/modules/v2fly-tproxy/v2ray/bin/v2ray"
 load_conf_var CONF_DIR "/data/adb/v2fly/"
 load_conf_var PID_FILE "${CONF_DIR}/v2ray.pid"
 load_conf_var LOG_FILE "${CONF_DIR}/v2ray.log"
+load_conf_var CONF_FILE "${CONF_DIR}/client.json"
+load_conf_var JSON_VER "v4"
 
 is_running() {
 	[ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null
@@ -20,13 +22,25 @@ start() {
 		return 1
 	fi
 
+	case "$JSON_VER" in
+	v4)
+		format_arg=""
+		;;
+	v5)
+		format_arg="-format jsonv5"
+		;;
+	*)
+		echo "Unknown version"
+		;;
+	esac
+
 	echo "Starting v2ray..."
 
 	# 确保日志目录存在
 	mkdir -p "$(dirname "$LOG_FILE")"
 
 	# 使用 nohup 后台运行并将输出重定向，记录 PID
-	nohup "$DAEMON" run -config "$CONF_DIR/config.json" >"$LOG_FILE" 2>&1 &
+	nohup "$DAEMON" run "$format_arg" -config "$CONF_FILE" >"$LOG_FILE" 2>&1 &
 
 	echo $! >"$PID_FILE"
 

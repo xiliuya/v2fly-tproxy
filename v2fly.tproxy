@@ -2,7 +2,7 @@
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 if [ -f "$SCRIPT_DIR/common_function.sh" ]; then
-    . "$SCRIPT_DIR/common_function.sh"
+	. "$SCRIPT_DIR/common_function.sh"
 fi
 
 load_conf_var appid_file "/data/adb/v2fly/appid.list"
