@@ -24,10 +24,10 @@ start() {
 
 	case "$JSON_VER" in
 	v4)
-		format_arg=""
+		format_arg="auto"
 		;;
 	v5)
-		format_arg="-format jsonv5"
+		format_arg="jsonv5"
 		;;
 	*)
 		echo "Unknown version"
@@ -40,7 +40,7 @@ start() {
 	mkdir -p "$(dirname "$LOG_FILE")"
 
 	# 使用 nohup 后台运行并将输出重定向，记录 PID
-	nohup "$DAEMON" run "$format_arg" -config "$CONF_FILE" >"$LOG_FILE" 2>&1 &
+	nohup "$DAEMON" run -format "$format_arg" -config "$CONF_FILE" >"$LOG_FILE" 2>&1 &
 
 	echo $! >"$PID_FILE"
 
