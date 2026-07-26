@@ -12,6 +12,10 @@ load_conf_var LOG_FILE "${CONF_DIR}/v2ray.log"
 load_conf_var CONF_FILE "${CONF_DIR}/client.json"
 load_conf_var JSON_VER "v4"
 
+if [ ! -f "${CONF_DIR}/v2ray.conf" ]; then
+	cp "$SCRIPT_DIR/v2fly_template.conf" "${CONF_DIR}/v2ray.conf"
+fi
+
 is_running() {
 	[ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null
 }

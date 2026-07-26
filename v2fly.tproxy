@@ -15,6 +15,10 @@ load_conf_var table_id 12321
 load_conf_var ipv4_fakedns "192.168.0.0/15"
 load_conf_var ipv6_fakedns "fc00::/18"
 
+is_running() {
+	iptables -t mangle -L V2FLY_OUTPUT >/dev/null 2>&1
+}
+
 # Android 的"一应用一用户"机制,appid 是该应用的 UID
 update_appid() {
 	setup_appid "iptables"
@@ -54,6 +58,9 @@ setup_appid() {
 }
 
 apply_rules() {
+	if is_running; then
+		clean_rules
+	fi
 	setup_iptables "iptables" "ip" "0.0.0.0/0" "127.0.0.1"
 	#setup_iptables "ip6tables" "ip -6" "::/0" "::1"
 
@@ -223,10 +230,20 @@ check_tproxy() {
 
 }
 
+status() {
+	if is_running; then
+		echo "iptables 规则已添加"
+	else
+		echo "iptables 规则未添加"
+		return 1
+	fi
+}
+
 case "$1" in
 start) apply_rules ;;
 stop) clean_rules ;;
 update) update_appid ;;
 check) check_tproxy ;;
-*) echo "Usage: $0 {start|stop|update|check}" ;;
+status) status ;;
+*) echo "Usage: $0 {start|stop|update|status|check}" ;;
 esac
