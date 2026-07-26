@@ -2,7 +2,7 @@ name: magisk module build
 on:
   push:
     tags:
-      - "v*.*.*"
+      - "v*"
 permissions:
   contents: write
 
