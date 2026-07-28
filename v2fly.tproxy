@@ -126,7 +126,7 @@ setup_iptables() {
 	${iptables_cmd} -t mangle -A OUTPUT -p udp -j V2FLY_OUTPUT
 	${iptables_cmd} -t mangle -A V2FLY_OUTPUT -i lo -j RETURN
 	# 不代理DNS
-	${iptables_cmd} -t mangle -A V2FLY_OUTPUT -p udp --dport 53 -j RETURN
+	#${iptables_cmd} -t mangle -A V2FLY_OUTPUT -p udp --dport 53 -j RETURN
 	${iptables_cmd} -t mangle -A V2FLY_OUTPUT -m conntrack --ctdir REPLY -j ACCEPT
 	# 防止回环,mark 后的数据包直通
 	${iptables_cmd} -t mangle -A V2FLY_OUTPUT -m mark --mark ${mark_v2fly} -j ACCEPT
@@ -140,7 +140,7 @@ setup_iptables() {
 	${iptables_cmd} -t mangle -A PREROUTING -p tcp -j V2FLY_PREROUTING
 	${iptables_cmd} -t mangle -A PREROUTING -p udp -j V2FLY_PREROUTING
 	# 不代理DNS
-	${iptables_cmd} -t mangle -A V2FLY_PREROUTING -p udp --dport 53 -j RETURN
+	#${iptables_cmd} -t mangle -A V2FLY_PREROUTING -p udp --dport 53 -j RETURN
 	${iptables_cmd} -t mangle -A V2FLY_PREROUTING -m conntrack --ctdir REPLY -j ACCEPT
 	${iptables_cmd} -t mangle -A V2FLY_PREROUTING -j LOCAL_PASS
 	${iptables_cmd} -t mangle -A V2FLY_PREROUTING -j V2FLY_DEVICE
