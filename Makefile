@@ -2,7 +2,7 @@ all: v2ray.zip
 	unzip v2ray.zip -d v2ray/bin/
 	zip -r v2fly_tproxy.zip META-INF/ v2ray/ \
 	v2fly.service v2fly.tproxy service.sh \
-	common_function.sh \
+	common_function.sh download.sh\
 	customize.sh module.prop \
 	update.json v2fly_template.conf
 v2ray.zip:
