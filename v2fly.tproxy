@@ -1,16 +1,15 @@
 #!/system/bin/sh
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-if [ -f "$SCRIPT_DIR/common_function.sh" ]; then
-	. "$SCRIPT_DIR/common_function.sh"
+MOD_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "$MOD_DIR/common_function.sh" ]; then
+	. "$MOD_DIR/common_function.sh"
 fi
 
 load_conf_var CONF_DIR "/data/adb/v2fly/"
 load_conf_var appid_file "${CONF_DIR}/appid.list"
 load_conf_var dokodemo_port 12345
 load_conf_var mark 255
-load_conf_var mark_hex $(printf '0x%x' "$mark")
-load_conf_var mark_v2fly $(printf '0x%x' 155)
+load_conf_var mark_v2fly 155
 load_conf_var table_id 12321
 load_conf_var ipv4_fakedns "192.168.0.0/15"
 load_conf_var ipv6_fakedns "fc00::/18"
@@ -135,7 +134,7 @@ setup_iptables() {
 	${iptables_cmd} -t mangle -A V2FLY_OUTPUT -j LOCAL_PASS
 	${iptables_cmd} -t mangle -A V2FLY_OUTPUT -j DEVICE_PASS
 	${iptables_cmd} -t mangle -A V2FLY_OUTPUT -j APP_CHAIN
-	${iptables_cmd} -t mangle -A V2FLY_OUTPUT -j MARK --set-xmark ${mark_hex}
+	${iptables_cmd} -t mangle -A V2FLY_OUTPUT -j MARK --set-xmark ${mark}
 
 	${iptables_cmd} -t mangle -N V2FLY_PREROUTING
 	${iptables_cmd} -t mangle -A PREROUTING -p tcp -j V2FLY_PREROUTING
@@ -147,10 +146,10 @@ setup_iptables() {
 	${iptables_cmd} -t mangle -A V2FLY_PREROUTING -j V2FLY_DEVICE
 	${iptables_cmd} -t mangle -A V2FLY_PREROUTING -p tcp -j TPROXY \
 		--on-port ${dokodemo_port} --on-ip "$lo_net" \
-		--tproxy-mark ${mark_hex}
+		--tproxy-mark ${mark}
 	${iptables_cmd} -t mangle -A V2FLY_PREROUTING -p udp -j TPROXY \
 		--on-port ${dokodemo_port} --on-ip "$lo_net" \
-		--tproxy-mark ${mark_hex}
+		--tproxy-mark ${mark}
 
 }
 

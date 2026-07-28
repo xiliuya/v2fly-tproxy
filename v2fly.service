@@ -1,11 +1,11 @@
 #!/system/bin/sh
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-if [ -f "$SCRIPT_DIR/common_function.sh" ]; then
-	. "$SCRIPT_DIR/common_function.sh"
+MOD_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "$MOD_DIR/common_function.sh" ]; then
+	. "$MOD_DIR/common_function.sh"
 fi
 
-load_conf_var DAEMON "/data/adb/modules/v2fly-tproxy/v2ray/bin/v2ray"
+load_conf_var DAEMON "${MOD_DIR}/v2ray/bin/v2ray"
 load_conf_var CONF_DIR "/data/adb/v2fly/"
 load_conf_var PID_FILE "${CONF_DIR}/v2ray.pid"
 load_conf_var LOG_FILE "${CONF_DIR}/v2ray.log"
@@ -13,7 +13,7 @@ load_conf_var CONF_FILE "${CONF_DIR}/client.json"
 load_conf_var JSON_VER "v4"
 
 if [ ! -f "${CONF_DIR}/v2ray.conf" ]; then
-	cp "$SCRIPT_DIR/v2fly_template.conf" "${CONF_DIR}/v2ray.conf"
+	cp "$MOD_DIR/v2fly_template.conf" "${CONF_DIR}/v2ray.conf"
 fi
 
 is_running() {
