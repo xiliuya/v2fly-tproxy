@@ -20,9 +20,9 @@ download_v2fly() {
 
 	if [ "$expected" = "$actual" ]; then
 		echo "Verification OK"
-		mkdir -p "$CONF_DIR"
-		unzip v2ray.zip -d "$CONF_DIR/v2ray/"
-        chown +x "$CONF_DIR/v2ray/bin/v2ray"
+		mkdir -p "$CONF_DIR/bin"
+		unzip v2ray.zip -d "$CONF_DIR/bin/"
+        chown +x "$CONF_DIR/bin/v2ray"
 	else
 		echo "Verification Failure"
 	fi

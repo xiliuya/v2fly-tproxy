@@ -9,7 +9,7 @@ load_conf_var CONF_DIR "/data/adb/v2fly/"
 load_conf_var PID_FILE "${CONF_DIR}/v2ray.pid"
 load_conf_var LOG_FILE "${CONF_DIR}/v2ray.log"
 load_conf_var CONF_FILE "${CONF_DIR}/client.json"
-load_conf_var V2FLY_BIN "${CONF_DIR}/v2ray/bin/v2ray"
+load_conf_var V2FLY_BIN "${CONF_DIR}/bin/v2ray"
 load_conf_var JSON_VER "v4"
 
 if [ ! -f "${CONF_DIR}/v2ray.conf" ]; then

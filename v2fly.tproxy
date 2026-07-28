@@ -14,6 +14,13 @@ load_conf_var table_id 12321
 load_conf_var ipv4_fakedns "192.168.0.0/15"
 load_conf_var ipv6_fakedns "fc00::/18"
 
+load_conf_var rule_autorun "true"
+
+if [ "$rule_autorun" != "true" ] && [ "$2" = "auto" ]; then
+	echo "警告: 不自动运行" >&2
+	return 1
+fi
+
 is_running() {
 	iptables -t mangle -S V2FLY_OUTPUT >/dev/null 2>&1
 }
