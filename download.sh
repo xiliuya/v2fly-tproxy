@@ -12,7 +12,6 @@ download_v2fly() {
 	VERSION="5.52.0"
 	DOWN_LINK="https://github.com/v2fly/v2ray-core/releases/download/v${VERSION}/v2ray-linux-$ARCH.zip"
 
-	cd "$CONF_DIR"
 	curl -fL --retry 3 -C - "$DOWN_LINK" -o "$CONF_DIR/v2ray.zip"
 	curl -fL --retry 3 -C - "$DOWN_LINK.dgst" -o "$CONF_DIR/v2ray.zip.dgst"
 
@@ -23,6 +22,7 @@ download_v2fly() {
 		echo "Verification OK"
 		mkdir -p "$CONF_DIR"
 		unzip v2ray.zip -d "$CONF_DIR/v2ray/"
+        chown +x "$CONF_DIR/v2ray/bin/v2ray"
 	else
 		echo "Verification Failure"
 	fi
