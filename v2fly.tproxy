@@ -180,7 +180,7 @@ setup_clean() {
 	local iptables_cmd="$1 -w 2"
 	local ip_cmd="$2"
 	local all_net="$3"
-	${ip_cmd} rule del fwmark "$mark" table "$table_id" pref "$table_id"
+	${ip_cmd} rule del pref "$table_id"
 	${ip_cmd} route del local "$all_net" dev lo table "$table_id"
 
 	pref=5000

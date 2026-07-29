@@ -12,7 +12,7 @@ load_conf_var() {
 			case "$value" in
 			*[[:space:]]* | *\`*) continue ;;
 			esac
-			val_clean=$(echo "$value" | sed 's/^["\x27]//; s/["\x27]$//')
+			val_clean=$(echo "$value" | sed 's/^["'\'']//; s/["'\'']$//')
 
 			eval "val_clean=${val_clean:=$default}"
 			if [ "$key" = "$var" ]; then
@@ -27,4 +27,3 @@ load_conf_var() {
 		eval "${var}=\$default"
 	fi
 }
-
