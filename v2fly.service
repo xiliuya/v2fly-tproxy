@@ -43,6 +43,9 @@ start() {
 	# 确保日志目录存在
 	mkdir -p "$(dirname "$LOG_FILE")"
 
+	# 确保运行时能正常使用CA
+	export SSL_CERT_DIR=/system/etc/security/cacerts
+
 	# 使用 nohup 后台运行并将输出重定向，记录 PID
 	nohup "$V2FLY_BIN" run -format "$format_arg" -config "$CONF_FILE" >"$LOG_FILE" 2>&1 &
 
