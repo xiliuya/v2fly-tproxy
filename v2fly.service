@@ -17,7 +17,12 @@ if [ ! -f "${CONF_DIR}/v2ray.conf" ]; then
 fi
 
 is_running() {
-	[ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null
+	[ -f "$PID_FILE" ] || return 1
+	local v2fly_pid
+	v2fly_pid="$(cat "$PID_FILE" 2>/dev/null)"
+
+	[ -n "$v2fly_pid" ] && [ -d "/proc/$v2fly_pid" ] && ! grep -q "State:.*Z" "/proc/$v2fly_pid/status" 2>/dev/null
+
 }
 
 start() {
