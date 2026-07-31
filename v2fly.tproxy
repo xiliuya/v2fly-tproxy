@@ -10,7 +10,7 @@ load_conf_var appid_file "${CONF_DIR}/appid.list"
 load_conf_var dokodemo_port 12345
 load_conf_var mark 255
 load_conf_var mark_v2fly 155
-load_conf_var table_id 12321
+load_conf_var table_id 3338
 load_conf_var ipv4_fakedns "192.168.0.0/15"
 load_conf_var ipv6_fakedns "fc00::/18"
 
@@ -130,7 +130,7 @@ setup_iptables() {
 		${iptables_cmd} -t mangle -A LOCAL_PASS -d "$ipv4_fakedns" -j RETURN
 	fi
 	for net in "${local_nets[@]}"; do
-		${iptables_cmd} -t mangle -A LOCAL_PASS -d "$net" -j ACCEPT
+		${iptables_cmd} -t mangle -A LOCAL_PASS -d "$net" -p udp ! --dport 53 -j ACCEPT
 	done
 
 	${iptables_cmd} -t mangle -N V2FLY_DEVICE
@@ -161,6 +161,7 @@ setup_iptables() {
 	# 不代理DNS
 	#${iptables_cmd} -t mangle -A V2FLY_PREROUTING -p udp --dport 53 -j RETURN
 	${iptables_cmd} -t mangle -A V2FLY_PREROUTING -m conntrack --ctdir REPLY -j ACCEPT
+	${iptables_cmd} -t mangle -A V2FLY_PREROUTING -m mark --mark ${mark_v2fly} -j ACCEPT
 	${iptables_cmd} -t mangle -A V2FLY_PREROUTING -j LOCAL_PASS
 	${iptables_cmd} -t mangle -A V2FLY_PREROUTING -j V2FLY_DEVICE
 	${iptables_cmd} -t mangle -A V2FLY_PREROUTING -p tcp -j TPROXY \
