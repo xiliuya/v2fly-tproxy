@@ -1,0 +1,61 @@
+* 简介
+一个 Android 环境下, 使用 ~TProxy~ 进行代理的模块.
+
+* 使用环境
+ Android 7+
+ =Magisk/Apatch/KernelSU= 等可运行 ~Magisk 规范~ 的模块 的 ROOT 方案.
+ 支持 WEBUI 管理.
+
+* 功能
+- [-] 基础功能
+  - [-] v2fly 基础代理
+    - [X] dokodemo-door
+    - [X] socks
+    - [X] ECH https
+    - [X] DOQ/DOH/DOT
+    - [ ] DOH3
+    - [ ] fakedns
+      暂不可用
+  - [-] 基于 iptables TProxy 透明代理
+    - [X] APPID 列表分流
+    - [X] 局域网放行
+    - [X] 全局 DNS 劫持
+    - [X] ipv4
+    - [ ] ipv6
+  - [ ] 更新 v2fly
+- [-] WEBUI
+  - [X] 管理模块启动
+  - [X] 显示 log
+  - [X] v2fly 客户端
+    - [X] config 基础配置
+    - [X] jsonv5 支持
+  - [-] 管理代理
+    - [X] APPID 列表配置
+    - [X] 白名单模式
+    - [ ] 黑名单模式
+  - [ ] 更新 v2fly
+    - [ ] geoip/geosite
+    - [ ] v2fly/v2ray-core
+
+* 快速开始
+CLI:
+** 获取 v2fly/v2ray-core
+执行:
+=/data/adb/modules/v2fly-tproxy/download.sh arm64-v8a=
+~arm64-v8a 为 v2fly github action 支持的打包架构.~
+执行后会将 v2ray-core 解压到 =/data/adb/v2fly/bin/= 目录,可自己手动放入.
+(自动构建模块包内不包含 v2ray-core)
+** 加入 v2fly 客户端 config
+只支持 jsonv4/v5 格式,默认文件位置:
+=/data/adb/v2fly/client.json=
+** 启动/关闭
+=/data/adb/modules/v2fly-tproxy/v2fly.service start/stop=
+=/data/adb/modules/v2fly-tproxy/v2fly.tproxy start/stop=
+
+* 配置注意事项
+    - tproxy mark 默认为 255 进入 dokodemo-door 端口
+    - 出站必须配置 SO-Mark 默认为 155
+    - 推荐 config 使用 DOT/DOH
+    - 应该使用 utls 指纹伪造
+    - 配置应使用 jsonv5 格式以支持 ECH https 出站
+
