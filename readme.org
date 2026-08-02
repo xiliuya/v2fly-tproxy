@@ -59,3 +59,16 @@ CLI:
     - 应该使用 utls 指纹伪造
     - 配置应使用 jsonv5 格式以支持 ECH https 出站
 
+* 参考项目/文献
+- [[https://guide.v2fly.org/app/tproxy.html][新 V2Ray 白话文指南]]
+- [[https://github.com/CHIZI-0618/AndroidTProxyShell][CHIZI-0618/AndroidTProxyShell]]
+
+* 使用的基础库
+- [[https://github.com/v2fly/v2ray-core][v2fly/v2ray-core]]
+
+* js 库
+- [[https://www.jsdelivr.com/package/npm/kernelsu-alt][KOWX712/kernelsu-alt]]
+- [[github.com/Choices-js/Choices][choices-js]]
+- [[https://medv.io/codejar/][codejar]]
+- [[https://highlightjs.org/][highlight.js]]
+- [[https://github.com/jaredreich/notie][notie.js]]
