@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>v2fly 管理后台</title>
+    <!-- 引入 Choices.js 样式 -->
+    <link href="./assets/pico.indigo.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./assets/choices.min.css">
+    <link rel="stylesheet" href="./assets/choices.css">
+    <link rel="stylesheet" href="./assets/tree.css">
+    <link href="./assets/default.min.css" rel="stylesheet">
+    <link href="./assets/notie.min.css" rel="stylesheet">
+    <link href="./assets/codejar.css" rel="stylesheet">
+    <style>
+    body {
+      padding: 20px;
+      font-family: sans-serif;
+    }
+    .container {
+      max-width: 500px;
+    }
+    </style>
+  </head>
+  <body>
+    <script src="./js/choices.min.js" defer></script>
+    <script src="./js/codejar.min.js" defer></script>
+    <script src="./js/highlight.min.js" defer></script>
+    <script src="./js/bash.min.js" defer></script>
+    <script src="./js/json.min.js" defer></script>
+    <script src="./js/notie.min.js" defer></script>
+    <script src="./js/log.min.js" defer></script>
+    <script src="./js/kernelsu.js"></script>
+    <h1>v2fly 管理  </h1>
+    <!-- 日志容器：固定高度 + 滚动条 + 暗色终端风 -->
+    <pre id="log" style="
+  height: 200px;
+  overflow-y: auto;
+  background: #121212;
+  color: #00ff66;
+  padding: 10px;
+  font-family: monospace;
+  font-size: 12px;
+  border-radius: 8px;
+  white-space: pre-wrap;
+  word-break: break-all;
+"></pre>
+    <h3>v2fly 后台服务</h3>
+    <button id="v2ray-start-btn">启动 v2ray</button>
+    <button id="v2ray-stop-btn">关闭 v2ray</button>
+    <button id="tproxy-start-btn">启动 tproxy</button>
+    <button id="tproxy-stop-btn">关闭 tproxy</button>
+    <button id="status-btn">服务状态</button>
+    <script src="./js/service.js" defer></script>
+    <br />
+    <br />
+    <h3> * 更新以下所有配置 </h3>
+    <div
+      style="background: #141218; color: #e6e1e5; border-radius: 12px; padding: 12px 16px; font-family: monospace; font-size: 13px; border: 1px solid #49454f;">
+      <p
+        style="margin: 4px 0; word-break: break-all;">/data/adb/v2fly/appid.list</p>
+      <p
+        style="margin: 4px 0; word-break: break-all;">/data/adb/v2fly/v2ray.conf</p>
+      <p
+        style="margin: 4px 0; word-break: break-all;">/data/adb/v2fly/config.json</p>
+    </div>
+    <br />
+    <button id="update-btn">更新配置</button>
+    <script src="./js/update_btn.js" defer></script>
+    <br />
+    <br />
+    <h3>* 配置 代理应用列表 (/data/adb/v2fly/appid.list) </h3>
+    <div class="container">
+      <select class="app-choice" multiple>
+        <option value="1">APP列表查找失败</option>
+      </select>
+      <script src="./js/app_choice.js" defer></script>
+    </div>
+
+    <h3>* 配置 tproxy (/data/adb/v2fly/v2ray.conf)</h3>
+    <div class="conf-editor editor"></div>
+    <script src="./js/conf_editor.js" defer></script>
+
+    <h3>* 配置 v2ray 代理 config (/data/adb/v2fly/client.json) </h3>
+    <div class="json-editor editor"></div>
+    <script src="./js/json_editor.js" defer></script>
+    <br>
+  </body>
+</html>

@@ -1,0 +1,23 @@
+.editor {
+  background-color: #141218; /* MD3 暗色 Surface 背景 */
+  color: #e6e1e5; /* MD3 文本色 */
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 14px 16px;
+  border-radius: 12px; /* M3 标准大圆角 */
+  border: 1px solid #49454f; /* M3 描边色 */
+  outline: none;
+  overflow: auto;
+  min-height: 120px;
+  max-height: 350px;
+}
+
+/* 获得聚焦时显示 MD3 Accent 主色光晕 */
+.editor:focus {
+  border-color: #d0bcff;
+  box-shadow: 0 0 0 2px rgba(208, 188, 255, 0.3);
+}
+.editor * {
+  background-color: transparent !important;
+}

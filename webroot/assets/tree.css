@@ -1,0 +1,42 @@
+/* 容器 */
+#json-viewer {
+  font-family: 'Consolas', 'Monaco', monospace;
+  padding: 10px;
+  background: #fff;
+}
+
+/* 核心缩进：这是实现树状结构的关键 */
+.tree-branch {
+  margin-left: 20px; /* 每一层缩进 20px */
+  border-left: 1px dashed #ccc; /* 可选：连接线，帮你一眼看出层级 */
+  padding-left: 10px;
+}
+
+details {
+  margin: 5px 0;
+}
+
+summary {
+  cursor: pointer;
+  font-weight: bold;
+  color: #2c3e50;
+  list-style: none; /* 隐藏原生箭头 */
+}
+
+/* 自定义折叠箭头 */
+summary::before {
+  content: '▶';
+  display: inline-block;
+  margin-right: 5px;
+  font-size: 10px;
+  transition: transform 0.2s;
+}
+
+details[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.leaf {
+  color: #c41d7f;
+  font-weight: normal;
+}

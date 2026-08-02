@@ -1,0 +1,80 @@
+/* 1. 主输入框 */
+.choices__inner {
+  background-color: #141218 !important; /* MD3 Dark Surface */
+  border: 1px solid #49454f !important; /* MD3 Outline */
+  border-radius: 12px !important; /* 大圆角 */
+  color: #e6e1e5 !important;
+  padding: 8px 14px !important;
+}
+
+/* 2. 聚焦外框高亮 */
+.choices.is-focused .choices__inner {
+  border-color: #d0bcff !important;
+  box-shadow: 0 0 0 2px rgba(208, 188, 255, 0.25) !important;
+}
+
+/* 3. 下拉菜单 */
+.choices__list--dropdown {
+  background-color: #2b2930 !important; /* MD3 Container Background */
+  border: 1px solid #49454f !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 4. 选项悬停/选中 */
+.choices__list--dropdown .choices__item--selectable.is-highlighted {
+  background-color: #4a4458 !important; /* MD3 Active State */
+  color: #e8def8 !important;
+}
+
+/* 5. 占位文字颜色 (Placeholder) */
+.choices__placeholder {
+  color: #938f96 !important;
+  opacity: 1;
+}
+
+/* 1. 彻底清空 Choices 默认加载的伪元素图标，解决遮挡问题 */
+.choices__list--dropdown .choices__input::before,
+.choices__list--dropdown .choices__input::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* 2. 重新对齐并规范搜索输入框的渲染 */
+.choices__list--dropdown .choices__input,
+.choices__input {
+  /* 恢复正常的盒模型与对齐 */
+  box-sizing: border-box !important;
+  width: 100% !important;
+  margin: 0 !important;
+  display: block !important;
+
+  /* 内边距与对齐：左边对齐 12px，不再做夸张的偏移 */
+  padding: 8px 12px !important;
+  text-align: left !important;
+
+  /* 颜色与字体 */
+  color: #e6e1e5 !important; /* 文字浅色 */
+  background-color: transparent !important; /* 背景透明 */
+  font-size: 13px !important;
+
+  /* 边框样式（加一条底边线分割搜索框和下面的选项） */
+  border: none !important;
+  border-bottom: 1px solid #49454f !important;
+  border-radius: 0 !important;
+  outline: none !important;
+}
+
+/* 3. 搜索占位符 (Placeholder) 正常靠左显示 */
+.choices__list--dropdown .choices__input::placeholder,
+.choices__input::placeholder {
+  color: #938f96 !important;
+  opacity: 1 !important;
+  text-align: left !important;
+}
+
+.container {
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+  width: 100% !important;
+}

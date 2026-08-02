@@ -3,7 +3,8 @@ all:
 	v2fly.service v2fly.tproxy service.sh \
 	common_function.sh download.sh \
 	customize.sh module.prop \
-	update.json v2fly_template.conf
+	update.json v2fly_template.conf \
+	webroot/
 
 clean:
 	$(RM) -r v2ray/bin/
