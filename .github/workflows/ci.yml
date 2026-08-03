@@ -25,9 +25,12 @@ jobs:
           ls ${{ github.workspace }}
       - name: Build zip
         run: make all
+        run: make zoneinfo.tar.gz
       - run: echo "🍏 This job's status is ${{ job.status }}."
       - name: Upload # 上传
         uses: softprops/action-gh-release@v2 # 使用第三方actions 上传
         with:
-          files: v2fly_tproxy.zip # 上传的文件
+          files:              # 上传的文件
+            - v2fly_tproxy.zip
+            - zoneinfo.tar.gz
 
