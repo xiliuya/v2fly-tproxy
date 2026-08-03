@@ -31,7 +31,7 @@ jobs:
       - name: Upload # 上传
         uses: softprops/action-gh-release@v2 # 使用第三方actions 上传
         with:
-          files:              # 上传的文件
-            - v2fly_tproxy.zip
-            - zoneinfo.tar.gz
+          files:  |         # 上传的文件
+            v2fly_tproxy.zip
+            zoneinfo.tar.gz
 
