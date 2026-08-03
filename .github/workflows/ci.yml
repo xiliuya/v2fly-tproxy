@@ -25,6 +25,7 @@ jobs:
           ls ${{ github.workspace }}
       - name: Build zip
         run: make all
+      - name: Build zoneinfo
         run: make zoneinfo.tar.gz
       - run: echo "🍏 This job's status is ${{ job.status }}."
       - name: Upload # 上传
