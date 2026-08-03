@@ -80,14 +80,14 @@ setup_iptables() {
 	${ip_cmd} rule add fwmark "$mark" table "$table_id" pref "$table_id"
 	${ip_cmd} route add local "$all_net" dev lo table "$table_id"
 
-	IFACES=$(${ip_cmd} route show table all | grep "^default via [0-9]" | grep -oE "dev (rmnet_data|wlan)[0-9]*" | cut -d' ' -f2 | awk '!seen[$0]++' | tr '\n' ' ')
+	IFACES=$(${ip_cmd} route show table all | grep "^default via [0-9]" | grep -oE "dev (rmnet_data|wlan)[0-9]*" | cut -d' ' -f2 | sort -r | awk '!seen[$0]++' | tr '\n' ' ')
 	if [ -z "$IFACES" ]; then
 		echo "未找到任何可用的网络接口！"
 		exit 1
 	fi
 	pref=5000
 	for iface in $IFACES; do
-		${ip_cmd} rule add fwmark "$mark_v2fly" lookup $iface pref 5000
+		${ip_cmd} rule add fwmark "$mark_v2fly" lookup $iface pref $pref
 		pref=$((pref + 1))
 	done
 	${ip_cmd} route flush cache

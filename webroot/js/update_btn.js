@@ -10,7 +10,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     async function writeMultiLineFile(filePath, textContent) {
       try {
-        const base64Str = btoa(unescape(encodeURIComponent(textContent)));
+        const base64Str = btoa(
+          unescape(encodeURIComponent(textContent + "\n")),
+        );
         const command = `echo "${base64Str}" | base64 -d > "${filePath}"`;
         await exec(command);
         console.log("写入成功！");

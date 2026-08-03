@@ -19,86 +19,36 @@ document.addEventListener("DOMContentLoaded", () => {
       return { success: false, error: errorMsg };
     }
   }
-
-  {
-    const btn = document.getElementById("v2ray-start-btn");
+  function bindServiceBtn(btnId, serviceName, action, actionLabel = "启动") {
+    const btn = document.getElementById(btnId);
     // 检查按钮是否存在，防止页面报错
     if (!btn) {
-      console.error("错误：没找到 ID 为 v2ray-start-btn 的按钮");
+      console.error(`错误：没找到 ID 为 ${btnId} 的按钮`);
       return;
     }
+
     btn.addEventListener("click", async function () {
       btn.disabled = true;
-      const res = await serviceExec("service", "start");
+      try {
+        const res = await serviceExec(serviceName, action);
 
-      if (res.success) {
-        console.log("服务启动成功！");
-      } else {
-        console.error("服务启动失败！");
+        if (res && res.success) {
+          toast(`服务${actionLabel}成功！`);
+        } else {
+          toast(`服务${actionLabel}失败！`);
+        }
+      } catch (err) {
+        toast(`服务${actionLabel}异常:`, err);
+      } finally {
+        btn.disabled = false;
       }
-
-      btn.disabled = false;
     });
   }
-  {
-    const btn = document.getElementById("v2ray-stop-btn");
-    // 检查按钮是否存在，防止页面报错
-    if (!btn) {
-      console.error("错误：没找到 ID 为 v2ray-stop-btn 的按钮");
-      return;
-    }
-    btn.addEventListener("click", async function () {
-      btn.disabled = true;
-      const res = await serviceExec("service", "stop");
+  bindServiceBtn("v2ray-start-btn","service","start","启动");
+  bindServiceBtn("v2ray-stop-btn","service","stop","关闭");
+  bindServiceBtn("tproxy-start-btn","tproxy","start","启动");
+  bindServiceBtn("tproxy-stop-btn","tproxy","stop","关闭");
 
-      if (res.success) {
-        console.log("服务关闭成功！");
-      } else {
-        console.error("服务关闭失败！");
-      }
-
-      btn.disabled = false;
-    });
-  }
-  {
-    const btn = document.getElementById("tproxy-start-btn");
-    if (!btn) {
-      console.error("错误：没找到 ID 为 tproxy-start-btn 的按钮");
-      return;
-    }
-    btn.addEventListener("click", async function () {
-      btn.disabled = true;
-      const res = await serviceExec("tproxy", "start");
-
-      if (res.success) {
-        console.log("服务启动成功！");
-      } else {
-        console.error("服务启动失败！");
-      }
-
-      btn.disabled = false;
-    });
-  }
-  {
-    const btn = document.getElementById("tproxy-stop-btn");
-    // 检查按钮是否存在，防止页面报错
-    if (!btn) {
-      console.error("错误：没找到 ID 为 tproxy-stop-btn 的按钮");
-      return;
-    }
-    btn.addEventListener("click", async function () {
-      btn.disabled = true;
-      const res = await serviceExec("tproxy", "stop");
-
-      if (res.success) {
-        console.log("服务关闭成功！");
-      } else {
-        console.error("服务关闭失败！");
-      }
-
-      btn.disabled = false;
-    });
-  }
   {
     const btn = document.getElementById("status-btn");
     // 检查按钮是否存在，防止页面报错
