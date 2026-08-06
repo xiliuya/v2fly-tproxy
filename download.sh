@@ -9,9 +9,10 @@ load_conf_var CONF_DIR "/data/adb/v2fly/"
 
 download_v2fly() {
 	ARCH=$1
-	VERSION="5.52.0"
-	DOWN_LINK="https://github.com/v2fly/v2ray-core/releases/download/v${VERSION}/v2ray-linux-$ARCH.zip"
+	VERSION="${2:-v5.52.0}"
+	DOWN_LINK="https://github.com/v2fly/v2ray-core/releases/download/${VERSION}/v2ray-linux-$ARCH.zip"
 
+    echo $DOWN_LINK
 	curl -fL --retry 3 -C - "$DOWN_LINK" -o "$CONF_DIR/v2ray.zip"
 	curl -fL --retry 3 -C - "$DOWN_LINK.dgst" -o "$CONF_DIR/v2ray.zip.dgst"
 
@@ -21,11 +22,11 @@ download_v2fly() {
 	if [ "$expected" = "$actual" ]; then
 		echo "Verification OK"
 		mkdir -p "$CONF_DIR/bin"
-		unzip v2ray.zip -d "$CONF_DIR/bin/"
-        chown +x "$CONF_DIR/bin/v2ray"
+		unzip $CONF_DIR/v2ray.zip -d "$CONF_DIR/bin/"
+        chmod +x "$CONF_DIR/bin/v2ray"
 	else
 		echo "Verification Failure"
 	fi
 }
 
-download_v2fly $1
+download_v2fly $1 $2
