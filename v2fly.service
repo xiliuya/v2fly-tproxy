@@ -13,7 +13,6 @@ load_conf_var CONF_FILE "${CONF_DIR}/client.json"
 load_conf_var V2FLY_BIN "${CONF_DIR}/bin/v2ray"
 load_conf_var JSON_VER "v4"
 
-
 if [ ! -f "${CONF_DIR}/v2ray.conf" ]; then
 	cp "$MOD_DIR/v2fly_template.conf" "${CONF_DIR}/v2ray.conf"
 fi
@@ -57,7 +56,14 @@ start() {
 	# 使用 nohup 后台运行并将输出重定向，记录 PID
 	nohup "$V2FLY_BIN" run -format "$format_arg" -config "$CONF_FILE" >"$LOG_FILE" 2>&1 &
 
-	echo $! >"$PID_FILE"
+	PID=$!
+
+	# 强制将进程的 cgroup 移入系统根节点 (逃离 App cgroup 连坐)
+	echo $PID >/sys/fs/cgroup/cgroup.procs 2>/dev/null || true
+	echo $PID >/dev/cpuset/tasks 2>/dev/null || true
+	echo $PID >/dev/stune/tasks 2>/dev/null || true
+
+	echo $PID >"$PID_FILE"
 
 	if is_running; then
 		echo "v2ray started successfully (PID: $(cat "$PID_FILE"))"
