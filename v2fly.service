@@ -7,6 +7,7 @@ fi
 
 load_conf_var CONF_DIR "/data/adb/v2fly/"
 load_conf_var PID_FILE "${CONF_DIR}/v2ray.pid"
+load_conf_var LISTENER_PID "${CONF_DIR}/listener.pid"
 load_conf_var LOG_FILE "${CONF_DIR}/v2ray.log"
 load_conf_var LOG_TZ "${CONF_DIR}/zoneinfo/Asia/Shanghai"
 load_conf_var CONF_FILE "${CONF_DIR}/client.json"
@@ -17,15 +18,33 @@ if [ ! -f "${CONF_DIR}/v2ray.conf" ]; then
 	cp "$MOD_DIR/v2fly_template.conf" "${CONF_DIR}/v2ray.conf"
 fi
 
-is_running() {
-	[ -f "$PID_FILE" ] || return 1
-	local v2fly_pid
-	v2fly_pid="$(cat "$PID_FILE" 2>/dev/null)"
+get_pid_state() {
+	local pid_file="$1"
 
-	[ -n "$v2fly_pid" ] && [ -d "/proc/$v2fly_pid" ] && ! grep -q "State:.*Z" "/proc/$v2fly_pid/status" 2>/dev/null
+	[ -f "$pid_file" ] || return 1
+	local pid
+	pid="$(cat "$pid_file" 2>/dev/null)"
+
+	[ -n "$pid" ] &&
+		[ -d "/proc/$pid" ] &&
+		! grep -q "State:.*Z" "/proc/$pid/status" 2>/dev/null
 
 }
+is_running() {
+	get_pid_state "$PID_FILE"
+}
 
+clean_cgroups() {
+	local pid=$1
+	local pid_file=$2
+
+	# 强制将进程的 cgroup 移入系统根节点 (逃离 App cgroup 连坐)
+	echo $pid >/sys/fs/cgroup/cgroup.procs 2>/dev/null || true
+	echo $pid >/dev/cpuset/tasks 2>/dev/null || true
+	echo $pid >/dev/stune/tasks 2>/dev/null || true
+	echo $pid >"$pid_file"
+
+}
 start() {
 	if is_running; then
 		echo "v2ray is already running (PID: $(cat "$PID_FILE"))"
@@ -53,17 +72,18 @@ start() {
 	export SSL_CERT_DIR=/system/etc/security/cacerts
 	export TZ=$LOG_TZ
 
-	# 使用 nohup 后台运行并将输出重定向，记录 PID
-	nohup "$V2FLY_BIN" run -format "$format_arg" -config "$CONF_FILE" >"$LOG_FILE" 2>&1 &
+	# 使用 setsid 后台运行并将输出重定向，记录 PID
+	setsid "$V2FLY_BIN" run -format "$format_arg" -config "$CONF_FILE" >"$LOG_FILE" 2>&1 &
+	clean_cgroups $PID $PID_FILE
 
-	PID=$!
-
-	# 强制将进程的 cgroup 移入系统根节点 (逃离 App cgroup 连坐)
-	echo $PID >/sys/fs/cgroup/cgroup.procs 2>/dev/null || true
-	echo $PID >/dev/cpuset/tasks 2>/dev/null || true
-	echo $PID >/dev/stune/tasks 2>/dev/null || true
-
-	echo $PID >"$PID_FILE"
+	if ! get_pid_state "$LISTENER_PID"; then
+        # 监听wifi/移动网络 route 状态
+        # 状态改变时会导致 table id 改变
+        # 需要修改 ip rule 让 mark 指向新 table
+		setsid sh $MOD_DIR/route_change_listener.sh >/dev/null 2>&1 &
+		clean_cgroups $PID $LISTENER_PID
+		echo "listener started successfully (PID: $(cat "$LISTENER_PID"))"
+	fi
 
 	if is_running; then
 		echo "v2ray started successfully (PID: $(cat "$PID_FILE"))"

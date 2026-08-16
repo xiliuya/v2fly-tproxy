@@ -71,15 +71,19 @@ apply_rules() {
 	#setup_iptables "ip6tables" "ip -6" "::/0" "::1"
 
 }
-setup_iptables() {
-	local iptables_cmd="$1 -w 2"
-	local ip_cmd="$2"
-	local all_net="$3"
-	local lo_net="$4"
 
-	${ip_cmd} rule add fwmark "$mark" table "$table_id" pref "$table_id"
-	${ip_cmd} route add local "$all_net" dev lo table "$table_id"
+clean_ifaces() {
+	local ip_cmd="$1"
+	pref=5000
+	while [ $pref -lt 5005 ]; do
+		${ip_cmd} rule del pref $pref 2>/dev/null
+		pref=$((pref + 1))
+	done
+}
 
+setup_ifaces() {
+	local ip_cmd="$1"
+	clean_ifaces ${ip_cmd}
 	IFACES=$(${ip_cmd} route show table all | grep "^default via [0-9]" | grep -oE "dev (rmnet_data|wlan)[0-9]*" | cut -d' ' -f2 | sort -r | awk '!seen[$0]++' | tr '\n' ' ')
 	if [ -z "$IFACES" ]; then
 		echo "未找到任何可用的网络接口！"
@@ -91,6 +95,22 @@ setup_iptables() {
 		pref=$((pref + 1))
 	done
 	${ip_cmd} route flush cache
+}
+
+update_ifaces() {
+	setup_ifaces "ip"
+}
+
+setup_iptables() {
+	local iptables_cmd="$1 -w 2"
+	local ip_cmd="$2"
+	local all_net="$3"
+	local lo_net="$4"
+
+	${ip_cmd} rule add fwmark "$mark" table "$table_id" pref "$table_id"
+	${ip_cmd} route add local "$all_net" dev lo table "$table_id"
+
+	setup_ifaces ${ip_cmd}
 
 	[ "$(cat /proc/sys/net/ipv4/ip_forward)" -eq 0 ] &&
 		echo 1 >/proc/sys/net/ipv4/ip_forward
@@ -184,11 +204,7 @@ setup_clean() {
 	${ip_cmd} rule del pref "$table_id"
 	${ip_cmd} route del local "$all_net" dev lo table "$table_id"
 
-	pref=5000
-	while [ $pref -lt 5005 ]; do
-		${ip_cmd} rule del pref $pref 2>/dev/null
-		pref=$((pref + 1))
-	done
+	clean_ifaces ${ip_cmd}
 
 	${ip_cmd} route flush cache
 
@@ -269,8 +285,9 @@ status() {
 case "$1" in
 start) apply_rules ;;
 stop) clean_rules ;;
-update) update_appid ;;
+update_appid) update_appid ;;
+update_ifaces) update_ifaces ;;
 check) check_tproxy ;;
 status) status ;;
-*) echo "Usage: $0 {start|stop|update|status|check}" ;;
+*) echo "Usage: $0 {start|stop|update_appid|update_ifaces|status|check}" ;;
 esac
