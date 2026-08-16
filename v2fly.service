@@ -27,7 +27,8 @@ get_pid_state() {
 
 	[ -n "$pid" ] || return 1
 	[ -d "/proc/$pid" ] || return 1
-	! grep -q "State:.*Z" "/proc/$pid/status" 2>/dev/null
+	grep -q "State:[[:space:]]*Z" "/proc/$pid/status" 2>/dev/null && return 1
+	return 0
 
 }
 is_running() {
@@ -74,14 +75,15 @@ start() {
 
 	# 使用 setsid 后台运行并将输出重定向，记录 PID
 	setsid "$V2FLY_BIN" run -format "$format_arg" -config "$CONF_FILE" >"$LOG_FILE" 2>&1 &
-	clean_cgroups $PID $PID_FILE
+
+	clean_cgroups $! $PID_FILE
 
 	if ! get_pid_state "$LISTENER_PID"; then
 		# 监听wifi/移动网络 route 状态
 		# 状态改变时会导致 table id 改变
 		# 需要修改 ip rule 让 mark 指向新 table
 		setsid sh $MOD_DIR/route_change_listener.sh >/dev/null 2>&1 &
-		clean_cgroups $PID $LISTENER_PID
+		clean_cgroups $! $LISTENER_PID
 		echo "listener started successfully (PID: $(cat "$LISTENER_PID"))"
 	fi
 

@@ -73,7 +73,7 @@ apply_rules() {
 }
 
 clean_ifaces() {
-	local ip_cmd="$1"
+	local ip_cmd="${1:-ip}"
 	pref=5000
 	while [ $pref -lt 5005 ]; do
 		${ip_cmd} rule del pref $pref 2>/dev/null
