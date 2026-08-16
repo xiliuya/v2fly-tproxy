@@ -25,9 +25,9 @@ get_pid_state() {
 	local pid
 	pid="$(cat "$pid_file" 2>/dev/null)"
 
-	[ -n "$pid" ] &&
-		[ -d "/proc/$pid" ] &&
-		! grep -q "State:.*Z" "/proc/$pid/status" 2>/dev/null
+	[ -n "$pid" ] || return 1
+	[ -d "/proc/$pid" ] || return 1
+	! grep -q "State:.*Z" "/proc/$pid/status" 2>/dev/null
 
 }
 is_running() {
@@ -77,9 +77,9 @@ start() {
 	clean_cgroups $PID $PID_FILE
 
 	if ! get_pid_state "$LISTENER_PID"; then
-        # 监听wifi/移动网络 route 状态
-        # 状态改变时会导致 table id 改变
-        # 需要修改 ip rule 让 mark 指向新 table
+		# 监听wifi/移动网络 route 状态
+		# 状态改变时会导致 table id 改变
+		# 需要修改 ip rule 让 mark 指向新 table
 		setsid sh $MOD_DIR/route_change_listener.sh >/dev/null 2>&1 &
 		clean_cgroups $PID $LISTENER_PID
 		echo "listener started successfully (PID: $(cat "$LISTENER_PID"))"
