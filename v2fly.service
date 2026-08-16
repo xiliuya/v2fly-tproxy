@@ -7,8 +7,9 @@ fi
 
 load_conf_var CONF_DIR "/data/adb/v2fly/"
 load_conf_var PID_FILE "${CONF_DIR}/v2ray.pid"
-load_conf_var LISTENER_PID "${CONF_DIR}/listener.pid"
 load_conf_var LOG_FILE "${CONF_DIR}/v2ray.log"
+load_conf_var LISTENER_PID "${CONF_DIR}/listener.pid"
+load_conf_var LISTENER_LOG "${CONF_DIR}/listener.log"
 load_conf_var LOG_TZ "${CONF_DIR}/zoneinfo/Asia/Shanghai"
 load_conf_var CONF_FILE "${CONF_DIR}/client.json"
 load_conf_var V2FLY_BIN "${CONF_DIR}/bin/v2ray"
@@ -82,7 +83,7 @@ start() {
 		# 监听wifi/移动网络 route 状态
 		# 状态改变时会导致 table id 改变
 		# 需要修改 ip rule 让 mark 指向新 table
-		setsid $MOD_DIR/route_change_listener.sh >/dev/null 2>&1 &
+		setsid $MOD_DIR/route_change_listener.sh >"$LISTENER_LOG" 2>&1 &
 		clean_cgroups $! $LISTENER_PID
 		echo "listener started successfully (PID: $(cat "$LISTENER_PID"))"
 	fi
@@ -96,31 +97,66 @@ start() {
 	fi
 }
 
-stop() {
-	if ! is_running; then
-		echo "v2ray is not running."
-		rm -f "$PID_FILE"
+# 通用服务停止函数
+# 用法: stop_service <pid_file_path> [service_name]
+stop_service() {
+	pid_file="$1"
+	name="${2:-service}"
+
+	if [ -z "$pid_file" ]; then
+		echo "Error: stop_service requires a PID file path."
+		return 1
+	fi
+
+	# 1. PID 文件不存在，或者 PID 对应的进程未运行
+	if [ ! -f "$pid_file" ]; then
+		echo "$name is not running."
 		return 0
 	fi
 
-	PID="$(cat "$PID_FILE")"
-	echo "Stopping v2ray (PID: $PID)..."
-	kill "$PID"
+	pid=$(cat "$pid_file" 2>/dev/null)
 
-	# 等待进程退出
-	CNT=0
-	while is_running; do
-		sleep 0.5
-		CNT=$((CNT + 1))
-		if [ "$CNT" -gt 10 ]; then
-			echo "Process did not terminate gracefully, forcing kill..."
-			kill -9 "$PID" 2>/dev/null
+	# 简单校验 PID 是否为合法数字
+	case "$pid" in
+	'' | *[!0-9]*)
+		echo "Invalid PID in $pid_file, removing stale file..."
+		rm -f "$pid_file"
+		return 0
+		;;
+	esac
+
+	# 检查 PID 对应进程是否存在 (kill -0)
+	if ! kill -0 "$pid" 2>/dev/null; then
+		echo "$name is not running (stale PID file)."
+		rm -f "$pid_file"
+		return 0
+	fi
+
+	# 2. 发送 SIGTERM 尝试优雅停止
+	echo "Stopping $name (PID: $pid)..."
+	kill "$pid" 2>/dev/null
+
+	# 3. 等待进程退出 (等待最多 5 秒)
+	cnt=0
+	while kill -0 "$pid" 2>/dev/null; do
+		sleep 1
+		cnt=$((cnt + 1))
+		if [ "$cnt" -ge 5 ]; then
+			echo "Process $pid did not terminate gracefully, forcing kill..."
+			kill -9 "$pid" 2>/dev/null
 			break
 		fi
 	done
 
-	rm -f "$PID_FILE"
-	echo "v2ray stopped."
+	# 4. 清理 PID 文件
+	rm -f "$pid_file"
+	echo "$name stopped."
+	return 0
+}
+
+stop() {
+	stop_service "$PID_FILE" V2Ray
+	stop_service "$LISTENER_PID" route_change_listener.sh
 }
 
 restart() {
@@ -129,13 +165,49 @@ restart() {
 	start
 }
 
-status() {
-	if is_running; then
-		echo "v2ray is running (PID: $(cat "$PID_FILE"))"
-	else
-		echo "v2ray is stopped."
+# 通用服务状态检测函数
+# 用法: status_service <pid_file_path> [service_name]
+# 返回码: 0 -> 正在运行
+#         1 -> 已停止 (PID 文件残留/无效)
+#         3 -> 未运行 (PID 文件不存在)
+status_service() {
+	pid_file="$1"
+	name="${2:-service}"
+
+	if [ -z "$pid_file" ]; then
+		echo "Error: status_service requires a PID file path."
 		return 1
 	fi
+
+	# 1. PID 文件不存在，确定为未运行
+	if [ ! -f "$pid_file" ]; then
+		echo "$name is stopped."
+		return 3
+	fi
+
+	pid=$(cat "$pid_file" 2>/dev/null)
+
+	# 2. 校验 PID 内容是否为纯数字
+	case "$pid" in
+	'' | *[!0-9]*)
+		echo "$name is stopped (invalid PID file: '$pid')."
+		return 1
+		;;
+	esac
+
+	# 3. 检查 PID 对应进程是否存在 (kill -0 检测)
+	if kill -0 "$pid" 2>/dev/null; then
+		echo "$name is running (PID: $pid)."
+		return 0
+	else
+		echo "$name is stopped (dead but PID file exists: $pid)."
+		return 1
+	fi
+}
+
+status() {
+	status_service "$PID_FILE" V2Ray
+	status_service "$LISTENER_PID" route_change_listener.sh
 }
 
 case "$1" in
