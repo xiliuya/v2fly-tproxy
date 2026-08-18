@@ -87,7 +87,7 @@ setup_ifaces() {
 	IFACES=$(${ip_cmd} route show table all | grep "^default via [0-9]" | grep -oE "dev (rmnet_data|wlan)[0-9]*" | cut -d' ' -f2 | sort -r | awk '!seen[$0]++' | tr '\n' ' ')
 	if [ -z "$IFACES" ]; then
 		echo "未找到任何可用的网络接口！"
-		exit 1
+		return 1
 	fi
 	pref=5000
 	for iface in $IFACES; do
@@ -95,10 +95,11 @@ setup_ifaces() {
 		pref=$((pref + 1))
 	done
 	${ip_cmd} route flush cache
+	return 0
 }
 
 update_ifaces() {
-	setup_ifaces "ip"
+	setup_ifaces "ip" || exit 1
 }
 
 setup_iptables() {
